@@ -1,0 +1,291 @@
+package com.tuyenadmin.eduSupporter; 
+ 
+import android.content.Intent; 
+import android.support.v7.app.AppCompatActivity; 
+import android.os.Bundle; 
+import android.view.View; 
+import android.widget.Button; 
+import android.widget.ImageView; 
+import android.widget.LinearLayout; 
+import android.widget.ListView; 
+import android.widget.TextView; 
+import android.widget.Toast; 
+ 
+import com.facebook.AccessToken; 
+import com.facebook.AccessTokenTracker; 
+import com.facebook.CallbackManager; 
+import com.facebook.FacebookCallback; 
+import com.facebook.FacebookException; 
+import com.facebook.GraphRequest; 
+import com.facebook.GraphResponse; 
+import com.facebook.login.LoginManager; 
+import com.facebook.login.LoginResult; 
+import com.facebook.login.widget.LoginButton; 
+import com.google.android.gms.auth.api.signin.GoogleSignIn; 
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount; 
+import com.google.android.gms.auth.api.signin.GoogleSignInClient; 
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions; 
+import com.google.android.gms.common.SignInButton; 
+import com.google.android.gms.tasks.Task; 
+import com.squareup.picasso.Picasso; 
+import org.json.JSONArray; 
+import org.json.JSONException; 
+import org.json.JSONObject; 
+ 
+import java.util.ArrayList; 
+import java.util.Arrays; 
+import java.util.List; 
+ 
+public class Login extends AppCompatActivity { 
+    private static final int RC_SIGN_IN =1 ; 
+    LoginButton loginFB; 
+    CallbackManager callbackManager=CallbackManager.Factory.create(); 
+    TextView te; 
+    ImageView imageView; 
+    ListView listView; 
+    JSONObject jsonUser=new JSONObject(); 
+    SignInButton signInButton; 
+    Button signOutButton; 
+    GoogleSignInClient mGoogleSignInClient; 
+    int filter=-1; 
+    @Override 
+    protected void onCreate(Bundle savedInstanceState) { 
+        super.onCreate(savedInstanceState); 
+        setContentView(R.layout.activity_login); 
+        signInButton=findViewById(R.id.sign_in_button); 
+        signOutButton=findViewById(R.id.sign_out_button); 
+        loginFB=findViewById(R.id.login_button); 
+        loginFB.setReadPermissions(Arrays.asList("email","user_friends","public_profile","user_birthday")); 
+        te=findViewById(R.id.textview); 
+        listView=findViewById(R.id.listfriend); 
+        imageView=findViewById(R.id.imageView); 
+        LoginManager.getInstance().logOut(); 
+        setViewLogin("","",""); 
+        facebook(); 
+        google(); 
+    } 
+ 
+    @Override 
+    protected void onStart() { 
+        super.onStart(); 
+ 
+        // Check if user is signed in (non-null) and update UI accordingly. 
+         ; 
+        //updateUI(currentUser); 
+    } 
+ 
+    private void google() { 
+ 
+        // Configure sign-in to request the user's ID, email address, and basic 
+        // profile. ID and basic profile are included in DEFAULT_SIGN_IN. 
+        signInButton.setOnClickListener(new View.OnClickListener() { 
+            @Override 
+            public void onClick(View v) { 
+                googlesignIn(); 
+ 
+ 
+            } 
+        }); 
+        signOutButton.setOnClickListener(new View.OnClickListener() { 
+            @Override 
+            public void onClick(View v) { 
+                googlesignOut(); 
+            } 
+        }); 
+ 
+ 
+    } 
+ 
+    private void googlesignOut() { 
+        mGoogleSignInClient.signOut(); 
+        signInButton.setLayoutParams( 
+                new LinearLayout.LayoutParams((int) 0.0,LinearLayout.LayoutParams.MATCH_PARENT,1.0f)); 
+        signOutButton.setLayoutParams( 
+                new LinearLayout.LayoutParams((int) 0.0,LinearLayout.LayoutParams.MATCH_PARENT,0.0f)); 
+        loginFB.setVisibility(View.VISIBLE); 
+        Toast.makeText(this, "Logout Google sucessfully", Toast.LENGTH_SHORT).show(); 
+        setViewLogin("","",""); 
+        filter=-1; 
+ 
+ 
+    } 
+ 
+    public void googlesignIn(){ 
+        if (filter==-1){ 
+            filter=1; 
+            final GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN) 
+                    .requestEmail() 
+                    .build(); 
+            // Build a GoogleSignInClient with the options specified by gso. 
+            mGoogleSignInClient=GoogleSignIn.getClient(this,gso); 
+            Intent siIntent=mGoogleSignInClient.getSignInIntent(); 
+            startActivityForResult(siIntent,RC_SIGN_IN); 
+        } 
+ 
+    }; 
+    private void handleSignInResult(com.google.android.gms.tasks.Task<GoogleSignInAccount> completedTask) { 
+        signInButton.setLayoutParams( 
+                new LinearLayout.LayoutParams((int) 0.0,LinearLayout.LayoutParams.MATCH_PARENT,0.0f)); 
+        signOutButton.setLayoutParams( 
+                new LinearLayout.LayoutParams((int) 0.0,LinearLayout.LayoutParams.MATCH_PARENT,1.0f)); 
+        GoogleSignInAccount acct = GoogleSignIn.getLastSignedInAccount(Login.this); 
+        loginFB.setVisibility(View.INVISIBLE); 
+        Toast.makeText(this, "Login Google sucessfully", Toast.LENGTH_SHORT).show(); 
+        if (acct!=null) { 
+            setViewLogin(acct.getDisplayName(),acct.getEmail(),String.valueOf(acct.getPhotoUrl())); 
+        } 
+ 
+ 
+ 
+        // Signed in successfully, show authenticated UI. 
+//            updateUI(account); 
+ 
+    } 
+    private void facebook()  { 
+ 
+        if (filter==-1){ 
+            loginFB.registerCallback(callbackManager, new FacebookCallback<LoginResult>() { 
+                @Override 
+                public void onSuccess(LoginResult loginResult) { 
+ 
+                    GraphRequest graphRequest=GraphRequest.newMeRequest(AccessToken.getCurrentAccessToken(), 
+                            new GraphRequest.GraphJSONObjectCallback() { 
+ 
+                                @Override 
+                                public void onCompleted(JSONObject object, GraphResponse response) { 
+                                    if (response!=null){ 
+                                        filter=0; 
+                                        jsonUser=object; 
+                                        signInButton.setVisibility(View.INVISIBLE); 
+                                        signOutButton.setVisibility(View.INVISIBLE); 
+                                        currentUserFacebook(jsonUser); 
+ 
+ 
+                                    } 
+                                } 
+ 
+ 
+                            }); 
+ 
+                    Bundle parameter= new Bundle(); 
+                    parameter.putString("fields","name,email,friends,birthday"); 
+                    graphRequest.setParameters(parameter); 
+                    graphRequest.executeAsync(); 
+ 
+ 
+                } 
+ 
+                @Override 
+                public void onCancel() { 
+                    Toast.makeText(Login.this, "Connecting is canceled", Toast.LENGTH_SHORT).show(); 
+                    filter=-1; 
+                } 
+ 
+                @Override 
+                public void onError(FacebookException error) { 
+                    Toast.makeText(Login.this, "Connecting error", Toast.LENGTH_SHORT).show(); 
+                    filter=-1; 
+                } 
+ 
+            }); 
+        } 
+ 
+        AccessTokenTracker accessTokenTracker = new AccessTokenTracker() { 
+            @Override 
+            protected void onCurrentAccessTokenChanged(AccessToken accessToken, AccessToken accessToken2) { 
+                if (accessToken == null) { 
+                    // Log in Logic 
+ 
+                } else if (accessToken2 == null) { 
+                    // Log out logic 
+                    Toast.makeText(Login.this, "Log out Facebook sucessfully", Toast.LENGTH_SHORT).show(); 
+                    facebooklogout(); 
+                } 
+            } 
+        }; 
+ 
+ 
+    } 
+ 
+    private void facebooklogout() { 
+        LoginManager.getInstance().logOut(); 
+        signInButton.setVisibility(View.VISIBLE); 
+        signOutButton.setVisibility(View.VISIBLE); 
+        setViewLogin("","",""); 
+        filter=-1; 
+    } 
+ 
+    public List<String> getFriendsListName(){ 
+        ArrayList<String> listfriends=new ArrayList<>(); 
+        try { 
+            JSONObject jsonObject1=jsonUser.getJSONObject("friends"); 
+            Toast.makeText(this, jsonObject1.toString(), Toast.LENGTH_SHORT).show(); 
+            JSONArray jsonArray=jsonObject1.getJSONArray("data"); 
+            for (int i=0;i<jsonArray.length();i++){ 
+                JSONObject object= (JSONObject) jsonArray.get(i); 
+                listfriends.add(object.getString("id")); 
+            } 
+        } catch (JSONException e) { 
+            e.printStackTrace(); 
+        } 
+        return listfriends; 
+    }; 
+    public  void currentUserFacebook(JSONObject jsonUser){ 
+        String name; 
+        String id; 
+        String image; 
+ 
+        try { 
+ 
+            name=jsonUser.getString("name"); 
+            id=jsonUser.getString("id"); 
+            image="http://graph.facebook.com/"+jsonUser.getString("id")+"/picture?width=250&height=250"; 
+            setViewLogin(name,id,image); 
+        } catch (JSONException e) { 
+            e.printStackTrace(); 
+ 
+        } 
+    }; 
+    @Override 
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) { 
+        super.onActivityResult(requestCode, resultCode, data); 
+        callbackManager.onActivityResult(requestCode, resultCode, data); 
+        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...); 
+        if (requestCode == RC_SIGN_IN) { 
+            // The Task returned from this call is always completed, no need to attach 
+            // a listener. 
+            Task<GoogleSignInAccount> task =GoogleSignIn.getSignedInAccountFromIntent(data); 
+            handleSignInResult(task); 
+        } 
+    } 
+    public void setViewLogin(String name,String id,String image){ 
+ 
+        if (name==""){ 
+            te.setText("Don't have any account"); 
+            imageView.setImageDrawable(getDrawable(R.drawable.nullimage)); 
+ 
+        }else { 
+            switch (filter){ 
+                case 0: 
+                    te.setText(name+" ,Facebook: https://www.facebook.com/"+id); 
+                    Picasso.get().load(String.valueOf(image)).into(imageView); 
+                    break; 
+                case 1: 
+                    imageView.setImageDrawable(getDrawable(R.drawable.gmail_image)); 
+                    te.setText(name+" ,Email: "+id); 
+            } 
+ 
+        } 
+ 
+ 
+    } 
+ 
+    @Override 
+    protected void onDestroy() { 
+        super.onDestroy(); 
+        facebooklogout(); 
+        googlesignOut(); 
+    } 
+ 
+ 
+} 
