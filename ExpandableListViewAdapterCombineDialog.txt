@@ -1,0 +1,182 @@
+package skills.edusupport;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.support.v7.app.AlertDialog;
+import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseExpandableListAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+import java.util.ArrayList;
+import java.util.Arrays;
+//This class customize ExpandableAdapter and make some mission themselt. If having any change listStudentMarks.
+//The expandableListView change themselt.
+public class O_ExpandableListView_StudentMarkAdapter extends BaseExpandableListAdapter {
+    Context context;
+    ArrayList<O_StudentMark> listStudentMarks;
+    AlertDialog alertDialogInputdata;
+    public O_ExpandableListView_StudentMarkAdapter(Context context, ArrayList<O_StudentMark> listStudentMarks) {
+        this.context = context;
+        this.listStudentMarks = listStudentMarks;
+    }
+
+    @Override
+    public int getGroupCount() {
+        return listStudentMarks.size();
+    }
+
+    @Override
+    public int getChildrenCount(int groupPosition) {
+        return 1;
+    }
+
+    @Override
+    public Object getGroup(int groupPosition) {
+        return listStudentMarks;
+    }
+
+    @Override
+    public Object getChild(int groupPosition, int childPosition) {
+        return null;
+    }
+
+    @Override
+    public long getGroupId(int groupPosition) {
+        return groupPosition;
+    }
+
+    @Override
+    public long getChildId(int groupPosition, int childPosition) {
+        return groupPosition;
+    }
+
+    @Override
+    public boolean hasStableIds() {
+        return true;
+    }
+
+    @Override
+    public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
+        convertView=View.inflate(context,R.layout.expandablelistview_item_header,null);
+        TextView textView= (TextView) convertView.findViewById(R.id.txt_listview_item_header);
+        textView.setText(listStudentMarks.get(groupPosition).getName());
+        convertView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,120));
+        return convertView;
+    }
+
+    public ArrayList<O_StudentMark> getListStudentMarks() {
+        return listStudentMarks;
+    }
+
+    @Override
+    public View getChildView(final int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
+        convertView=View.inflate(context,R.layout.o_adapterlistview_student_mark,null);
+        final TextView txt_mark_mieng= (TextView) convertView.findViewById(R.id.txt_mark_mieng);
+        txt_mark_mieng.setText(String.valueOf(listStudentMarks.get(groupPosition).getMieng()));
+        final TextView txt_mark_15p= (TextView) convertView.findViewById(R.id.txt_mark_15p);
+        txt_mark_15p.setText(String.valueOf(listStudentMarks.get(groupPosition).getD15p()));
+        final TextView txt_mark_1tiet= (TextView) convertView.findViewById(R.id.txt_mark_1tiet);
+        txt_mark_1tiet.setText(String.valueOf(listStudentMarks.get(groupPosition).getD1tiet()));
+        final TextView txt_mark_hk= (TextView) convertView.findViewById(R.id.txt_mark_hk);
+        txt_mark_hk.setText(String.valueOf(listStudentMarks.get(groupPosition).getHK()));
+        txt_mark_mieng.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createAlertDialogInputData("Điểm miệng:",groupPosition,txt_mark_mieng);
+            }
+        });
+        txt_mark_15p.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createAlertDialogInputData("Điểm 15p:",groupPosition,txt_mark_15p);
+            }
+        });
+        txt_mark_1tiet.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createAlertDialogInputData("Điểm 1 tiết:",groupPosition,txt_mark_1tiet);
+            }
+        });
+        txt_mark_hk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createAlertDialogInputData("Điểm HK:",groupPosition,txt_mark_hk);
+            }
+        });
+        return convertView;
+    }
+    @Override
+    public boolean isChildSelectable(int groupPosition, int childPosition) {
+        return true;
+    }
+    public void createAlertDialogInputData(String title, final int position, final TextView txt) {
+        alertDialogInputdata=new AlertDialog.Builder(context).create();
+        View view=View.inflate(context,R.layout.o_dialog_inputdata,null);
+        TextView textView= (TextView) view.findViewById(R.id.txt_inputData);
+        textView.setText(title);
+        final EditText edt= (EditText) view.findViewById(R.id.edt_inputData);
+        Button btn= (Button) view.findViewById(R.id.btn_submit);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ArrayList<Double> values=new ArrayList<>();
+                String[] existText=txt.getText().toString().replace("[","")
+                        .replace("]","").split(",");
+                Log.i("existText :",existText.length+","+existText[0]);
+                if (existText[0]==""){
+                    existText=null;
+                }
+                if (existText!=null){
+                    Double[] value=new Double[existText.length];
+                    for (int i=0;i<existText.length;i++){
+                        if (existText[i]!=""){
+                            value[i]=Double.valueOf(existText[i]);
+                        }
+                    }
+                    values=new ArrayList<>();
+                    values.addAll(Arrays.asList(value));
+                }
+                double inputvalue=-1;
+                if (!edt.getText().equals(null)){
+                    inputvalue=Double.valueOf(String.valueOf(edt.getText()));
+                }
+                if (inputvalue>=0&&inputvalue<=10){
+                    switch (txt.getId()){
+                        case R.id.txt_mark_mieng:
+                            listStudentMarks.get(position).setMieng(inputvalue);
+                            break;
+                        case R.id.txt_mark_15p:
+                            values.add(inputvalue);
+                            listStudentMarks.get(position).setD15p(values);
+                            break;
+                        case R.id.txt_mark_1tiet:
+                            values.add(inputvalue);
+                            listStudentMarks.get(position).setD1tiet(values);
+                            break;
+                        case R.id.txt_mark_hk:
+                            listStudentMarks.get(position).setHK(inputvalue);
+                            break;
+                    }
+                    alertDialogInputdata.cancel();
+                } else{
+                    Toast.makeText(context, "Giá trị không hợp lệ!", Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        });
+        alertDialogInputdata.setView(view);
+        alertDialogInputdata.setCancelable(true);
+        alertDialogInputdata.show();
+        alertDialogInputdata.setCanceledOnTouchOutside(false);
+        alertDialogInputdata.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                alertDialogInputdata.cancel();
+                alertDialogInputdata=null;
+            }
+        });
+    }
+}
