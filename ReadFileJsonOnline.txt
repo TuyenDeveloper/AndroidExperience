@@ -1,0 +1,98 @@
+package skills.edusupport;
+
+import android.content.Context;
+import android.os.AsyncTask;
+import android.os.Environment;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+//This class have a mission, get a File from URL firebasestorage and put in "file1".
+public class O_AsyncGetFilesFromUriFirebase extends AsyncTask<String,Integer,Boolean> {
+
+    File[] file;
+    Context context;
+    public O_AsyncGetFilesFromUriFirebase() {
+    }
+
+    public O_AsyncGetFilesFromUriFirebase(File[] file, Context context) {
+        this.file = file;
+        this.context=context;
+    }
+
+    @Override
+    public void onPreExecute() {
+        super.onPreExecute();
+    }
+    @Override
+    public Boolean doInBackground(String... strings) {
+        for (int i=0;i<strings.length;i++){
+            String path=strings[i];
+            try {
+                //Read File from storageFirebase
+                URL url=new URL(path);
+                HttpURLConnection httpURLConnection= (HttpURLConnection) url.openConnection();
+                InputStreamReader inputStreamReader=new InputStreamReader(httpURLConnection.getInputStream());
+                BufferedReader bufferedReader=new BufferedReader(inputStreamReader);
+                String line=bufferedReader.readLine();
+                StringBuilder sb = new StringBuilder();
+                while (line!=null){
+                    sb.append(line);
+                    line=bufferedReader.readLine();
+                }
+                bufferedReader.close();
+                inputStreamReader.close();
+                httpURLConnection.disconnect();
+                //----------------------------------------
+                //Write data sb to file1
+                FileWriter fileWriter=new FileWriter(file[i]);
+                BufferedWriter bw=new BufferedWriter(fileWriter);
+                bw.write(sb.toString());
+                bw.close();
+                fileWriter.close();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void onPostExecute(Boolean aBoolean) {
+        super.onPostExecute(aBoolean);
+
+    }
+
+    @Override
+    public void onProgressUpdate(Integer... values) {
+        super.onProgressUpdate(values);
+    }
+
+
+    public File createFilePublicInStorage(Context context,String folderName, String filename) throws IOException {
+        File directory=new File(String.valueOf(Environment.getExternalStorageDirectory()),context.getResources().getString(R.string.app_name));
+        if (!directory.exists()){
+            directory.mkdirs();
+        }
+        File localFiles=new File(directory,
+                folderName);
+        if (!localFiles.exists()){
+            localFiles.mkdir();
+        }
+        File localFile=new File(localFiles,filename);
+        if (!localFile.exists()){
+            localFile.createNewFile();
+        }
+        return localFile;
+    }
+
+
+
+}
