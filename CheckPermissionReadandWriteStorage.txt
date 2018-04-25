@@ -22,7 +22,7 @@
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode==REQUEST_READ_AND_WRITE_EXTENAL_STORAGE_PERMISSION_RESULT){
             if (grantResults[0]==PackageManager.PERMISSION_GRANTED&&grantResults[1]==PackageManager.PERMISSION_GRANTED){
-
+		//Something you want to go next when the permission box is accept by user.
             }else{
                 Toast.makeText(this, "Appication need to write extenal Storage to save File", Toast.LENGTH_SHORT).show();
             }
