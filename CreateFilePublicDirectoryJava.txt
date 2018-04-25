@@ -1,0 +1,19 @@
+﻿public File createFilePublicInStorage(Context context,String folderName, String filename) throws IOException {
+    //Warning: you're sure that the directory Environment.getExternalStorageDirectory() is exist. If not, having error. 
+	//Should use this method anywhen you create a file in your code.
+	File directory=new File(String.valueOf(Environment.getExternalStorageDirectory()),context.getResources().getString(R.string.app_name));
+    if (!directory.exists()){
+         directory.mkdir();
+    }
+    File localFiles=new File(directory,
+                folderName);
+    if (!localFiles.exists()){
+            localFiles.mkdir();
+    }
+	//when you want to create a file, not directory , you must use createNewFile() method,instead of using mkdir...
+    File localFile=new File(localFiles,filename);
+    if (!localFile.exists()){
+            localFile.createNewFile();
+    }
+        return localFile;
+}
