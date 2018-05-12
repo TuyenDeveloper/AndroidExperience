@@ -1,0 +1,197 @@
+
+MainActivity.java
+package developer.tuyen.test; 
+import android.content.Context; 
+import android.os.AsyncTask; 
+import android.os.Handler; 
+import android.support.v7.app.AlertDialog; 
+import android.support.v7.app.AppCompatActivity; 
+import android.os.Bundle; 
+import android.util.Log; 
+import android.view.View; 
+import android.widget.Button; 
+import android.widget.ListView; 
+import android.widget.ProgressBar; 
+import android.widget.Toast; 
+import java.util.ArrayList; 
+ 
+public class MainActivity extends AppCompatActivity { 
+    ListView listView; 
+    ArrayList<String> list=new ArrayList<>(); 
+    ListviewAdapter listviewAdapter; 
+    Button button; 
+    MyAsynk myAsynk; 
+    AlertDialog alertDialog; 
+    ProgressBar progressBar; 
+    Handler handler; 
+    Runnable runnable; 
+    @Override 
+    protected void onCreate(Bundle savedInstanceState) { 
+        super.onCreate(savedInstanceState); 
+        setContentView(R.layout.activity_main); 
+        progressBar=findViewById(R.id.progressBar); 
+        progressBar.setProgress(0); 
+        listView=findViewById(R.id.listview); 
+        listviewAdapter=new ListviewAdapter(this,0,list); 
+        listView.setAdapter(listviewAdapter); 
+        listviewAdapter.notifyDataSetChanged(); 
+        button=findViewById(R.id.button); 
+        button.setOnClickListener(new View.OnClickListener() { 
+            @Override 
+            public void onClick(View v) { 
+                if (myAsynk!=null){ 
+                    if (myAsynk.isCancelled()){ 
+                        createSomeTask(); 
+                    }else{ 
+                        Toast.makeText(MainActivity.this, "Task is running!", Toast.LENGTH_SHORT).show(); 
+                    } 
+                }else{ 
+                    createSomeTask(); 
+                } 
+            } 
+        }); 
+ 
+    } 
+ 
+    @Override 
+    protected void onResume() { 
+        super.onResume(); 
+ 
+    } 
+    private void createSomeTask(){ 
+        //This handler to post any task at other thread to main thread. 
+        handler=new Handler(); 
+        Thread thread=new Thread(new Runnable() { 
+            @Override 
+            public void run() { 
+                myAsynk=new MyAsynk(); 
+                myAsynk.execute(new Integer[]{1,24,5215,125216}); 
+                int i=0; 
+                //This command is to wait 10s for myAsynk done, unless they will cancel myAsynk and aware to dialog. 
+                while (!myAsynk.isCancelled()&i<10){ 
+                    if (alertDialog==null){ 
+                        createDialogLoading(MainActivity.this,handler); 
+                    } 
+                    try { 
+                        Thread.sleep(1000); 
+                        i++; 
+                        Log.i("thread2:","while"); 
+                    } catch (InterruptedException e) { 
+                        e.printStackTrace(); 
+                    } 
+                } 
+                //Check if over 10s 
+                if (i>=10){ 
+                    alertDialog.cancel();alertDialog=null; 
+                    createDialogFail(MainActivity.this,handler); 
+                    myAsynk.cancel(true); 
+                }else{ 
+                    alertDialog.cancel();alertDialog=null; 
+                } 
+                Log.i("thread2:","outwhile"); 
+                handler.post(new Runnable() { 
+                    @Override 
+                    public void run() { 
+                        list.add("10"); 
+                        listviewAdapter.notifyDataSetChanged(); 
+                    } 
+                }); 
+ 
+            } 
+        }); 
+        thread.start(); 
+    } 
+    private class MyAsynk extends AsyncTask<Integer,Double,ArrayList<Integer>>{ 
+        @Override 
+        protected void onPreExecute() { 
+            super.onPreExecute(); 
+            //indicate that data is loading with a progress bar. 
+            list.add("0"); 
+            handler.post(new Runnable() { 
+                @Override 
+                public void run() { 
+                    listviewAdapter.notifyDataSetChanged(); 
+                } 
+            }); 
+        } 
+        @Override 
+        protected ArrayList<Integer> doInBackground(Integer... integers) { 
+            ArrayList<Integer> arrayList=new ArrayList<>(); 
+            //for i reach each mission in the inputed array and do something. 
+            int progressPercent=0; 
+            for (int i:integers){ 
+                progressPercent+=100/integers.length; 
+                try { 
+                    Thread.sleep(3000); 
+                    publishProgress((double) progressPercent); 
+                    arrayList.add(i); 
+                } catch (InterruptedException e) { 
+                    e.printStackTrace(); 
+                } 
+            } 
+ 
+            return arrayList; 
+        } 
+ 
+        @Override 
+        protected void onProgressUpdate(final Double... values) { 
+            super.onProgressUpdate(values); 
+            //Update inteface: listview 
+            handler.post(new Runnable() { 
+                @Override 
+                public void run() { 
+                    progressBar.setProgress((int) values[0].doubleValue()); 
+                } 
+            }); 
+ 
+        } 
+ 
+        @Override 
+        protected void onCancelled(ArrayList<Integer> integers) { 
+            super.onCancelled(integers); 
+            //Rememberto call method notifyDatasetChange 
+            list.remove("0"); 
+            listviewAdapter.notifyDataSetChanged(); 
+        } 
+ 
+        @Override 
+        protected void onPostExecute( ArrayList<Integer> integers) { 
+            super.onPostExecute(integers); 
+            list.remove("0"); 
+            for (Integer integer:integers){ 
+                list.add(String.valueOf(integer)); 
+            } 
+            Log.i("progress",list.toString()); 
+            //cancel asyntask after final tasks. 
+            cancel(true); 
+ 
+        } 
+ 
+} 
+    private void createDialogLoading(final Context context, Handler handler1){ 
+        handler1.post(new Runnable() { 
+            @Override 
+            public void run() { 
+                AlertDialog.Builder builder=new AlertDialog.Builder(context); 
+                View view=View.inflate(context,R.layout.layout_adater_item_loadingprogressbar,null); 
+                builder.setView(view).setCancelable(true).setTitle("Test thoi!"); 
+                alertDialog=builder.create(); 
+                alertDialog.show(); 
+            } 
+        }); 
+ 
+    } 
+    private void createDialogFail(final Context context, Handler handler1){ 
+        handler1.post(new Runnable() { 
+            @Override 
+            public void run() { 
+                AlertDialog.Builder builder=new AlertDialog.Builder(context); 
+                View view=View.inflate(context,R.layout.layout_dialog_fail,null); 
+                builder.setView(view).setCancelable(true).setTitle("Fail").setIcon(android.R.drawable.alert_dark_frame); 
+                alertDialog=builder.create(); 
+                alertDialog.show(); 
+            } 
+        }); 
+ 
+    } 
+} 
