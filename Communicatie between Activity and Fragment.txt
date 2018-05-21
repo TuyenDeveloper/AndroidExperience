@@ -1,0 +1,149 @@
+
+						MainActivity.java
+package developer.tuyen.test;
+
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
+import android.widget.Button;
+import android.widget.TextView;
+import java.util.ArrayList;
+
+
+public class MainActivity extends FragmentActivity implements Fragment1.SendData{
+    ViewPager viewPager;
+    TextView textView;
+    ArrayList<Fragment> list=new ArrayList<>();
+    Button button;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        textView=findViewById(R.id.textView);
+        Fragment fragment1=new Fragment1();
+        Fragment fragment2=new Fragment2();
+        //Send data to Fragment
+        Bundle bundle=new Bundle();
+        bundle.putString("name","ko co gi");
+        fragment1.setArguments(bundle);
+        fragment2.setArguments(bundle);        
+        //Set up viewPager
+        list.add(fragment1);list.add(fragment2);        
+        viewPager=findViewById(R.id.viewpager);
+        final PagerAdapterPrivate pagerAdapterPrivate=new PagerAdapterPrivate(getSupportFragmentManager(),list);
+        viewPager.setAdapter(pagerAdapterPrivate);        
+    }
+
+    @Override
+    public void sendData(Bundle bundle) {
+        textView.setText(bundle.getString("data"));
+    }
+}
+						Fragment1.java
+package developer.tuyen.test;
+
+
+import android.content.Context;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
+public class Fragment1 extends Fragment {
+    TextView textView;
+    Button button;
+    SendData sendData;
+    @Override
+    public View onCreateView(LayoutInflater inflater, final ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View rootView = inflater.inflate(R.layout.fragment_fragment1, container, false);
+        textView=rootView.findViewById(R.id.textView2);
+        textView.setText(getArguments().getString("name"));
+        button=rootView.findViewById(R.id.button2);
+        //EventListener when click button, pass bundle to MainActivity.
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Bundle bundle=new Bundle();
+                bundle.putString("data",textView.getText().toString());
+                sendData.sendData(bundle);
+            }
+        });
+        return rootView;
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        sendData= (SendData) context;
+    }
+    //Use this for pass data to Activity.
+    interface SendData{
+         void sendData(Bundle bundle);
+    }
+}
+					Fragment2.java
+package developer.tuyen.test;
+
+import android.content.Context;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+public class Fragment2 extends Fragment {
+    TextView textView;
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View rootView = inflater.inflate(R.layout.fragment_fragment2, container, false);
+        textView=rootView.findViewById(R.id.textView2);
+        textView.setText(getArguments().getString("name"));
+        return rootView;
+    }
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+    }
+
+}
+
+					PageAdapterPrivate.class
+package developer.tuyen.test;
+
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
+import java.util.ArrayList;
+
+public class PagerAdapterPrivate extends FragmentStatePagerAdapter {
+    ArrayList<Fragment> list;
+    public PagerAdapterPrivate(FragmentManager fm,ArrayList<Fragment> list) {
+        super(fm);
+        this.list=list;
+    }
+
+    @Override
+    public Fragment getItem(int position) {
+        return list.get(position);
+    }
+
+    @Override
+    public int getCount() {
+        return list.size();
+    }
+    public ArrayList<Fragment> getList(){
+        return list;
+    }
+
+
+}
+
+
