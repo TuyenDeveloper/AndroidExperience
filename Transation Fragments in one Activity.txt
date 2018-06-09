@@ -1,0 +1,417 @@
+﻿						MainActivity.java
+package com.tgmss.lifecalculator.activity;
+
+import android.annotation.SuppressLint;
+import android.content.res.AssetManager;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.tgmss.lifecalculator.JavaFile.DataAdviseType;
+import com.tgmss.lifecalculator.JavaFile.DataQuestionType;
+import com.tgmss.lifecalculator.JavaFile.DataStructureType;
+import com.tgmss.lifecalculator.R;
+import com.tgmss.lifecalculator.fragment.FooterFragment;
+import com.tgmss.lifecalculator.fragment.HeaderFragment;
+import com.tgmss.lifecalculator.fragment.InfoFragment;
+import com.tgmss.lifecalculator.fragment.DataFragment;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity implements InfoFragment.SendDataFromInfo,HeaderFragment.SendDataFromHeader,
+        DataFragment.SendDataFromDataFragment,FooterFragment.SendDataFromFooter,View.OnClickListener{
+    LinearLayout linearLayout;
+	//List some Fragment to attach to activity ordered.
+    Fragment infoFragment =new InfoFragment();
+    Fragment headerFragment =new HeaderFragment();
+    Fragment dataFragment =new DataFragment();
+    Fragment footerFragment =new FooterFragment();
+    Bundle bundleInfoFragment =new Bundle();
+    String currentGender;
+    int currentAge;    
+    @SuppressLint("ResourceType")
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        listdataHeader =new ArrayList<>();
+        listdataQuestion=new ArrayList<>();
+        listdataFooter=new ArrayList<>();
+	// Start transation add InfoFragment into layout "relative_fragmentScreen".
+        getSupportFragmentManager().beginTransaction().add((R.id.relative_fragmentScreen), infoFragment).
+                setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                .setCustomAnimations(android.R.anim.slide_in_left,android.R.anim.slide_out_right)
+                .addToBackStack(null).commit();
+        setUpData();
+        advertiseInitialize();
+        linearLayout=findViewById(R.id.linear_next);
+    }   
+    
+
+    @Override
+    public void SendDataFromInfo(Bundle bundle) {
+	//This action is start when the HeaderFragment call method SendDataFromInfo();	
+	//Get data form Info.
+        currentGender=bundle.getString("gender");
+        currentAge=bundle.getInt("currentAge");
+        bundleInfoFragment.putBundle("InfoFragment",bundle);
+        bundleInfoFragment.putSerializable("listdataHeader",listdataHeader);
+        bundleInfoFragment.putSerializable("listdataQuestion",listdataQuestion);
+        bundleInfoFragment.putSerializable("listdataFooter",listdataFooter);
+	// Start transation replace InfoFragment by HeaderFragment.
+        getSupportFragmentManager().beginTransaction().replace((R.id.relative_fragmentScreen), headerFragment)
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                .setCustomAnimations(android.R.anim.fade_out,android.R.anim.fade_in)
+                .disallowAddToBackStack().commit();
+        Bundle bundle2=new Bundle();
+        bundle2.putSerializable("listdataHeader",listdataHeader);
+	//Pass data to headerFragment.
+        headerFragment.setArguments(bundle2);
+    }
+    @Override
+    public void SendDataFromHeader(Bundle bundle) {
+	//This action is start when the HeaderFragment call method SendDataFromHeader();
+	// Start transation replace HeaderFragment by DataFragment.
+        getSupportFragmentManager().beginTransaction().replace((R.id.relative_fragmentScreen), dataFragment).
+                setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                .setCustomAnimations(android.R.anim.slide_in_left,android.R.anim.slide_out_right)
+                .disallowAddToBackStack().commit();
+        dataFragment.setArguments(bundleInfoFragment);
+    }
+    @Override
+    public void sendDataFromDataFragment(Bundle bundle) {
+        //Recieve data from DataFragment.
+        
+    }
+
+    @Override
+    public void SendDataFromFooter(Bundle bundle) {
+	//Recieve data from FooterFragment.
+    } 
+}
+							InfoFragment.java
+package com.tgmss.lifecalculator.fragment;
+
+import android.content.Context;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.NumberPicker;
+import android.widget.RadioButton;
+import android.widget.Toast;
+
+import com.tgmss.lifecalculator.R;
+
+public class InfoFragment extends Fragment {  
+	//Generate  SendDataFromInfo  
+    SendDataFromInfo sendDataFromInfo;    
+    Button btn_next_info;
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment;
+        View view=inflater.inflate(R.layout.fragment_info, container, false);        
+        btn_next_info=view.findViewById(R.id.btn_next_info);
+	//press button to pass data to MainActivity
+        btn_next_info.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Bundle bundle=new Bundle();
+                bundle.putInt("currentAge", 1);
+		// This method to call SendDataFromInfo of Activity.(kind of callback)         
+                sendDataFromInfo.SendDataFromInfo(bundle);
+            }
+        });
+        return view;
+    }
+    // TODO: Rename method, update argument and hook method into UI event
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+	//initialize sendDataFromInfo with own activity of this fragment.
+        sendDataFromInfo = (SendDataFromInfo) context;
+    }
+    //Use this for pass data to Activity.
+    public interface SendDataFromInfo {
+        void SendDataFromInfo(Bundle bundle);
+    }
+}
+							HeaderFragment.java
+package com.tgmss.lifecalculator.fragment;
+
+
+import android.content.Context;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.tgmss.lifecalculator.R;
+
+import java.util.ArrayList;
+
+public class HeaderFragment extends Fragment {
+    Button btn_next;
+    TextView txt_header;
+    int currentPage=0;
+    ArrayList<String> datalist;
+    HeaderFragment.SendDataFromHeader sendDataFromHeader;
+    public HeaderFragment() {
+        // Required empty public constructor
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View view=inflater.inflate(R.layout.fragment_header, container, false);
+        txt_header=view.findViewById(R.id.txt_header);
+        btn_next=view.findViewById(R.id.btn_next);
+        btn_next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (currentPage<datalist.size()-1){
+                    currentPage++;
+                    txt_header.setText(datalist.get(currentPage));
+                }else{
+                    sendDataFromHeader.SendDataFromHeader(new Bundle());
+                }
+
+            }
+        });
+        return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        datalist= (ArrayList<String>) getArguments().getSerializable("listdataHeader");
+        txt_header.setText(datalist.get(currentPage));
+    }
+
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        sendDataFromHeader = (HeaderFragment.SendDataFromHeader) context;
+    }
+    public interface SendDataFromHeader {
+        void SendDataFromHeader(Bundle bundle);
+    }
+
+}
+							DataFragment.java
+package com.tgmss.lifecalculator.fragment;
+
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.tgmss.lifecalculator.JavaFile.DataAdviseType;
+import com.tgmss.lifecalculator.R;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+
+import com.tgmss.lifecalculator.JavaFile.DataQuestionType;
+
+public class DataFragment extends Fragment {
+    LinearLayout linear_answerchoose;
+    TextView textView;
+    SendDataFromDataFragment sendData;
+    ProgressBar progressBar_loading;
+    int currentData=0;
+    int currentAge;
+    String currentGender;
+    double totalPoint=0;
+    ImageView img_data;
+    Bundle bundle;
+    Animation animationOfButtons;
+    ArrayList<DataQuestionType> listdata=new ArrayList<>();
+    ArrayList<Double> listPoint=new ArrayList<>();
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment;
+        View view=inflater.inflate(R.layout.fragment_data, container, false);
+        textView=view.findViewById(R.id.txt_question);
+        img_data=view.findViewById(R.id.img_data);
+        progressBar_loading=view.findViewById(R.id.progressBar_loading);
+        linear_answerchoose=view.findViewById(R.id.linear_answerchoose);
+        return view;
+    }
+	//Getdata From own activity.
+    public void getDataFromActivity(){
+        listdata= (ArrayList<DataQuestionType>) getArguments().getSerializable("listdataQuestion");
+        /** Filter data question type**/
+        ArrayList<DataQuestionType> clone= new ArrayList<>();
+        for (int i=0;i<listdata.size();i++){
+            DataQuestionType data=listdata.get(i);
+            if (!data.getGender().toLowerCase().equals("both")){
+                if (!data.getGender().toLowerCase().equals(currentGender.toLowerCase())){
+                    clone.add(data);
+                }
+            }
+        }
+        listdata.removeAll(clone);
+        /** -------------------------------------------**/
+    }    
+    
+    // TODO: Rename method, update argument and hook method into UI event
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        sendData= (SendDataFromDataFragment) context;
+    }   
+
+    //Use this for pass data to Activity.
+    public interface SendDataFromDataFragment {
+        void sendDataFromDataFragment(Bundle bundle);
+    }  
+}
+							FooterFragment.java
+package com.tgmss.lifecalculator.fragment;
+
+
+import android.content.Context;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ExpandableListView;
+import android.widget.TextView;
+
+import com.tgmss.lifecalculator.JavaFile.DataAdviseType;
+import com.tgmss.lifecalculator.JavaFile.DataQuestionType;
+import com.tgmss.lifecalculator.JavaFile.ExpandableAdapter;
+import com.tgmss.lifecalculator.R;
+
+import java.util.ArrayList;
+
+/**
+ * A simple {@link Fragment} subclass.
+ */
+public class FooterFragment extends Fragment {
+    FooterFragment.SendDataFromFooter sendDataFromFooter;
+    TextView txtResult;
+    ExpandableListView expandableListView;
+    ArrayList<DataAdviseType> dataAdvises=new ArrayList<>();
+    ArrayList<Double> listPoint=new ArrayList<>();
+    ArrayList<DataQuestionType> listDataQuestion=new ArrayList<>();
+    int result;
+    int curentAge;
+    public FooterFragment() {
+        // Required empty public constructor
+    }
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View view=inflater.inflate(R.layout.fragment_footer, container, false);
+        txtResult =view.findViewById(R.id.txt_result);
+        expandableListView=view.findViewById(R.id.expandableListView);
+        setData();
+        return view;
+    }
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        sendDataFromFooter = (FooterFragment.SendDataFromFooter) context;
+    }
+    public interface SendDataFromFooter {
+        void SendDataFromFooter(Bundle bundle);
+    }
+
+    public void setData(){
+        Bundle bundle=getArguments().getBundle("InfoFragment");
+        dataAdvises = (ArrayList<DataAdviseType>) bundle.getSerializable("listdataFooter");
+        Bundle bundle1=getArguments().getBundle("DataFragment");
+        result = (int) bundle1.getDouble("result");
+        curentAge = bundle1.getInt("currentAge");
+        listPoint = (ArrayList<Double>) bundle1.getSerializable("listPoint");
+        listDataQuestion=(ArrayList<DataQuestionType>) bundle1.getSerializable("listDataQuestion");
+        /** Filter data advise type follow negative point**/
+        ArrayList<DataAdviseType> clone=new ArrayList<>();
+        for (int i=0;i<listPoint.size();i++){
+            if (listPoint.get(i)<=0){
+                for (DataAdviseType dataAdvise:dataAdvises){
+                    if (dataAdvise.getId()==i+1){
+                        clone.add(dataAdvise);
+                        break;
+                    }
+                }
+            }
+        }
+        dataAdvises.removeAll(clone);
+        /** -------------------------------------------**/
+        /** Filter data advise type follow gender question**/
+        ArrayList<DataAdviseType> clone1= new ArrayList<>();
+        for (DataAdviseType adviseType: dataAdvises){
+            for (DataQuestionType questionType:listDataQuestion){
+                if (questionType.getId()==adviseType.getId()){
+                    clone1.add(adviseType);
+                    break;
+                }
+            }
+        }
+        dataAdvises.removeAll(clone1);
+        /** -------------------------------------------**/
+        if (result<=0){
+            txtResult.setText("Bạn đang hủy hoại cuộc đời bạn một cách trầm trọng, hãy thay đổi ngay nếu bạn muốn sông lâu");
+        }else{
+            txtResult.setText("Có thể bạn không tin, nhưng mà bạn có thể sống đến "+result+" tuổi đấy");
+        }
+        ExpandableAdapter adapter=new ExpandableAdapter(getContext(),dataAdvises);
+        expandableListView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+    }
+}
+
+
+
+
+
