@@ -22,7 +22,7 @@ public class CheckConnectionState extends BroadcastReceiver {
         if (!isConnected) {
             //Do something
             if (thread!=null){
-                tasks.stopTasks();
+                tasks.stopTasks(thread);
             }
             if (alertDialog==null){
                 alertDialog=createLoadingDialog(context);
@@ -45,7 +45,7 @@ public class CheckConnectionState extends BroadcastReceiver {
     }
     public interface Tasks{
         Thread runTasks();
-        void stopTasks();
+        void stopTasks(Thread thread);
     }
     public AlertDialog createLoadingDialog(Context context){
         AlertDialog.Builder builder=new AlertDialog.Builder(context);
