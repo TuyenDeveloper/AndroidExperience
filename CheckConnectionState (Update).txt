@@ -1,0 +1,77 @@
+
+public class CheckConnectionState extends BroadcastReceiver {
+    Thread thread;
+    AlertDialog alertDialog;
+    Tasks tasks;
+    private static CheckConnectionState instance = new CheckConnectionState();
+
+    private CheckConnectionState() {
+    }
+    public static CheckConnectionState getInstance(){
+        return instance;
+    }
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        //Check connection.
+        tasks= (Tasks) context;
+        ConnectivityManager cm =
+                (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+        if (!isConnected) {
+            //Do something
+            if (thread!=null){
+                tasks.stopTasks();
+            }
+            if (alertDialog==null){
+                alertDialog=createLoadingDialog(context);
+            }
+        }else {
+            //Do something
+            if (thread==null){
+                thread=tasks.runTasks();
+            }else{
+                if (thread.isInterrupted()){
+                    thread=tasks.runTasks();
+                }
+            }
+            if (alertDialog!=null){
+                destroyLoadingDialog();
+            }
+
+        }
+
+    }
+    public interface Tasks{
+        Thread runTasks();
+        void stopTasks();
+    }
+    public AlertDialog createLoadingDialog(Context context){
+        AlertDialog.Builder builder=new AlertDialog.Builder(context);
+        // Create dynamically view for alertdialog.
+        LinearLayout view=new LinearLayout(context);
+        view.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);
+        view.setLayoutParams(params);
+        ProgressBar progressBar=new ProgressBar(context);
+        progressBar.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            progressBar.setForegroundGravity(Gravity.CENTER);
+        }
+        view.addView(progressBar);
+        builder.setView(view);
+        builder.setTitle("Trying to connect!");
+        builder.setCancelable(false);
+        AlertDialog alert=builder.create();
+        alert.show();
+        return alert;
+    }
+    public void destroyLoadingDialog(){
+        if (alertDialog!=null){
+            alertDialog.cancel();
+            alertDialog=null;
+        }
+    }
+
+}
