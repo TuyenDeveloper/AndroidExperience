@@ -1,0 +1,95 @@
+package vn.com.nidsolution.foodservice.Tool;
+
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Set;
+
+public class OtherTools {
+    public static int limitString=15;
+    public static int getNewKey(ArrayList<Integer> set){
+        //Create a newkey without coinciding oldSets
+
+        int newKey=0;
+        int maxkey=0;
+        for (int index:set
+                ) {
+            if (maxkey<index){maxkey=index;}
+        }
+        ArrayList<Integer> keyparent=new ArrayList<>();
+        for (int i=0;i<=maxkey+1;i++){
+            keyparent.add(i);
+        }
+        keyparent.removeAll(set);
+        if (keyparent.size()!=0){
+            newKey=keyparent.get(0);
+        }
+        return newKey;
+        //-----------------------------done to get new key food--------------------------------------
+    }
+    public static String sortenLongString(String longString, int limit){
+        //sorten "longString" because it's too long,make the screen not good for looking.
+        String string="";
+        if (longString!=null){
+            if (longString.length()>3){
+                if (longString.length()>limit){
+                    string=longString.substring(0,limit-3)+"...";
+                }else{
+                    string=longString;
+                }
+            }else{
+                string=longString;
+            }
+        }
+        return string;
+    }
+    public static String adjustBeautifulPrice(String price){
+        String adjustprice="";
+        int index=0;
+        if (price!=null){
+            int si=price.length()%3;
+            if (si!=0){
+                adjustprice+=price.substring(0,si)+",";
+                index=si-1;
+            }
+            while (index<=price.length()-3){
+                adjustprice+=price.substring(index,index+3);
+                if (si!=0){
+                    if (index!=price.length()-4){
+                        adjustprice+=",";
+                    }
+                }else{
+                    if (index!=price.length()-3){
+                        adjustprice+=",";
+                    }
+                }
+                index+=3;
+            }
+
+        }
+        return adjustprice;
+    }
+    public static  String updateTime(String date) {
+        Date lastday=new Date(date);
+        Date now=new Date();
+        int year=now.getYear()-lastday.getYear();
+        int month=now.getMonth()-lastday.getMonth();
+        int day=now.getDay()-lastday.getDay();
+        int hour=now.getHours()-lastday.getHours();
+        int minute=now.getMinutes()-lastday.getMinutes();
+        String data;
+        if (year>=1){
+            data=year+" nam tru?c";
+        }else{
+            if (month>=1){ data=month+" tháng tru?c";}
+            else {
+                if (day>=1){data=day+" ngày tru?c";}
+                else {if (hour>=1){data=hour+" ti?ng tru?c";}
+                else{data=(year*525600+month*43200+day*1440+hour*60+minute)+" phút tru?c";}
+                }
+            }
+        }
+        return data;
+    }
+}
